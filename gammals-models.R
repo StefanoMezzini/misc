@@ -20,13 +20,15 @@ gam.check(b1)
 plot(mu,fitted(b1)[,1]);abline(0,1,col=2)
 plot(log(th),fitted(b1)[,2]);abline(0,1,col=2)
 
-# but shape should be k = mu / theta, where scale = theta?
+# but shape should be k = mu / theta, where theta is the scale?
 set.seed(1)
-y <- rgamma(n,shape=mu/th,scale=th)
+k <- mu / th
+y <- rgamma(n, shape = k, scale = th)
 
-b2 <- gam(list(y~s(x0)+s(x2),~s(x1)+s(x3)),family=gammals)
-plot(mu,fitted(b2)[,1]);abline(0,1,col=2)
-plot(log(th), fitted(b2)[,2]);abline(0,1,col=2)
+b2 <- gam(list(y ~ s(x0) + s(x2), ~ s(x1) + s(x3)), family = gammals)
+plot(mu, fitted(b2)[ , 1]); abline(0, 1, col = 2)
+plot(log(k), fitted(b2)[ , 2]); abline(0, 1, col = 2)
+plot(-log(k), fitted(b2)[ , 2]); abline(0, 1, col = 2) # fit = -log(shape)?
 
 # a different example:
 library('tibble')
@@ -36,14 +38,16 @@ library('ggplot2')
 library('cowplot')
 theme_set(theme_bw())
 
+rm(list = ls())
+
 set.seed(1)
 K <- 100
 d <- tibble(x1 = 1:K,
             x2 = 1:K * 0.5,
-            k = x1 - x2, # shape
-            theta = 0.05 * x2, # scale
-            mu = k * theta,
-            sigma2 = mu * theta) %>%
+            k = x1 - x2,             # shape
+            theta = 0.05 * x2,       # scale
+            mu = k * theta,          # mean
+            sigma2 = mu * theta) %>% # variance
   mutate(y = map2_dbl(k, theta,
                       function(x, y) rgamma(n = 1, shape = x, scale = y)))
 m <- gam(list(y ~ s(x1) + s(x2), ~ s(x2)),
@@ -64,6 +68,10 @@ plot_grid(
   # shape: log(resp) = b + log(1+exp(link))
   ggplot() +
     geom_point(aes(x2, log(k)), d) + # true shape
+    geom_line(aes(x2, -7 + log(1+exp(V2))), link, color = 'red', lwd = 1.5) +
+    geom_line(aes(x2, V2), resp, color = 'blue', lwd = 1.5, lty = 'dashed'),
+  ggplot() +
+    geom_point(aes(x2, -log(k)), d) + # true shape
     geom_line(aes(x2, -7 + log(1+exp(V2))), link, color = 'red', lwd = 1.5) +
     geom_line(aes(x2, V2), resp, color = 'blue', lwd = 1.5, lty = 'dashed'),
   ncol = 1)
