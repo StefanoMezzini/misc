@@ -30,64 +30,19 @@ plot(mu, fitted(b2)[ , 1]); abline(0, 1, col = 2)
 plot(log(k), fitted(b2)[ , 2]); abline(0, 1, col = 2)
 plot(-log(k), fitted(b2)[ , 2]); abline(0, 1, col = 2) # fit = -log(shape)?
 
-# a different example:
+# changing the scale in rgamma() does not change the estimated scale:
 library('tibble')
-library('dplyr')
-library('purrr')
-library('ggplot2')
-library('cowplot')
-theme_set(theme_bw())
-
 rm(list = ls())
 
-set.seed(1)
-K <- 100
-d <- tibble(x1 = 1:K,
-            x2 = 1:K * 0.5,
-            k = x1 - x2,             # shape
-            theta = 0.05 * x2,       # scale
-            mu = k * theta,          # mean
-            sigma2 = mu * theta) %>% # variance
-  mutate(y = map2_dbl(k, theta,
-                      function(x, y) rgamma(n = 1, shape = x, scale = y)))
-m <- gam(list(y ~ s(x1) + s(x2), ~ s(x2)),
-         family = gammals(), data = d, method = 'REML')
+foo <- function(x) {
+  set.seed(1)
+  d <- tibble(x1 = runif(1e3), y = rgamma(1e3, shape = 2, scale = x))
+  m <- gam(list(y ~ 1, ~ 1), family = gammals(), data = d, method = 'REML')
+  
+  tibble(mu = exp(m$coefficients[1]),
+         scale = exp(-7 + log1p(exp(m$coefficients[2]))),
+         `1/scale` = 1/scale)
+}
 
-# too lazy to prevent warning
-link <- bind_cols(d, as_tibble(predict(m, type = 'link')))
-resp <- bind_cols(d, as_tibble(predict(m, type = 'response'))) %>%
-  mutate(s2 = exp(log(V1) + V2))
-
-# link scale: red, response scale: blue dashes
-plot_grid(
-  # mean: simple log link
-  ggplot() +
-    geom_point(aes(x1, mu), d) + # true mean
-    geom_line(aes(x1, exp(V1)), link, color = 'red', lwd = 1.5) +
-    geom_line(aes(x1, V1), resp, color = 'blue', lwd = 1.5, lty = 'dashed'),
-  # shape: log(resp) = b + log(1+exp(link))
-  ggplot() +
-    geom_point(aes(x2, log(k)), d) + # true shape
-    geom_line(aes(x2, -7 + log(1+exp(V2))), link, color = 'red', lwd = 1.5) +
-    geom_line(aes(x2, V2), resp, color = 'blue', lwd = 1.5, lty = 'dashed'),
-  ggplot() +
-    geom_point(aes(x2, -log(k)), d) + # true shape
-    geom_line(aes(x2, -7 + log(1+exp(V2))), link, color = 'red', lwd = 1.5) +
-    geom_line(aes(x2, V2), resp, color = 'blue', lwd = 1.5, lty = 'dashed'),
-  ncol = 1)
-
-# gammals() uses a simple log() link for mean
-as_tibble(cbind(predict(m, type = 'response'),
-                predict(m, type = 'link'))) %>%
-  mutate(disagree = V1 != exp(V3)) %>%
-  pull(disagree) %>%
-  sum() # all values agree
-
-# V2 on response scale = -7 + log(1 + exp(V2 on link scale))
-# how to transform back to actual shape parameter?
-# see details in ?gammals
-as_tibble(cbind(predict(m, type = 'response'),
-                predict(m, type = 'link'))) %>%
-  mutate(disagree = V2 != -7 + log(1 + exp(V4))) %>%
-  pull(disagree) %>%
-  sum() # all values agree
+foo(1)
+foo(100)
