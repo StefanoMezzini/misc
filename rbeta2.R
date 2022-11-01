@@ -2,7 +2,7 @@
 rbeta2 <- function(mu, sigma2, N) {
   # mu = a / (a + b)
   # sigma2 = a * b / (a + b)^2 * (a + b + 1)
-  a <- ((1 - mu) / var - 1 / mu) * mu ^ 2
+  a <- ((1 - mu) / sigma2 - 1 / mu) * mu ^ 2
   b <- a * (1 / mu - 1)
   
   #' generate random values using `rbeta()`
