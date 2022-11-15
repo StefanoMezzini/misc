@@ -7,14 +7,15 @@ ndvi_data <- tibble(date = seq(from = as.Date('2020-01-01'),
                     year = lubridate::year(date),
                     doy = lubridate::yday(date),
                     dec_date = lubridate::decimal_date(date),
-                    mu = sinpi(2 * dec_date) * 0.3 + 0.5,
-                    sigma2 = (cospi(2 * dec_date) + 1) * 0.05,
+                    mu = sinpi(2 * dec_date) * 0.3 + 0.5 +
+                      (dec_date / 2021 - 1) * 300,
+                    sigma2 = (cospi(2 * dec_date) + 1) / 30 + 0.01,
                     ndvi = rbeta2(mu, sigma2, length(mu)) * 2 - 1)
 
 if(FALSE) {
 layout(matrix(1:3, ncol = 1))
 plot(mu ~ date, ndvi_data, ylim = c(0, 1))
-plot(sigma2 ~ date, ndvi_data, ylim = c(0, 0.25))
+plot(sigma2 ~ date, ndvi_data)
 plot(ndvi ~ date, ndvi_data, ylim = c(-1, 1))
 layout(1)
 }
