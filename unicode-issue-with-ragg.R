@@ -1,3 +1,6 @@
+#' *fixed by changing backend graphics to AGG*:
+# go to Tools > Global Options > Graphics (topof the window)
+
 library('ragg')
 plot(1, xlab = '\U1D53C doesn\'t work')
 ggplot2::ggplot() +
