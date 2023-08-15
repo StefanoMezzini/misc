@@ -10,7 +10,7 @@ ndvi_data <- tibble(date = seq(from = as.Date('2020-01-01'),
                     mu = sinpi(2 * dec_date) * 0.3 + 0.5 +
                       (dec_date / 2021 - 1) * 300,
                     sigma2 = (cospi(2 * dec_date) + 1) / 30 + 0.01,
-                    ndvi = rbeta2(mu, sigma2, length(mu)) * 2 - 1)
+                    ndvi = rbeta2(mu, sigma2, length(mu)) * 1.5 - 0.5)
 
 if(FALSE) {
 layout(matrix(1:3, ncol = 1))
