@@ -22,6 +22,7 @@ ggplot(ndvi_data, aes(doy, ndvi)) +
 
 ggplot(ndvi_data, aes(year, ndvi)) +
   geom_point(alpha = 0.3) +
+  stat_summary(fun = 'mean', color = 'darkorange', size = 1) +
   stat_summary(fun = 'mean', color = 'blue')
 
 # starting with a LM
@@ -31,6 +32,7 @@ lm_ndvi <- gam(ndvi ~ year + doy,
 
 # predict from the model
 preds <- mutate(ndvi_data, year = lubridate::decimal_date(date))
+preds$year
 ndvi_data$lm <- predict(lm_ndvi, newdata = preds)
 
 # LM fits the data badly 
@@ -41,8 +43,7 @@ ggplot(ndvi_data) +
 # fit a GLM instead ----
 # convert NDVI from (-1, 1) to (0, 1)
 ndvi_data <- mutate(ndvi_data,
-                    ndvi_01 = (ndvi + 1) / 2,
-                    dec_date = lubridate::decimal_date(date))
+                    ndvi_01 = (ndvi + 1) / 2)
 
 glm_ndvi <- gam(ndvi_01 ~ year + doy,
                 family = betar(link = 'logit'),
@@ -92,6 +93,7 @@ plot(ndvi_data$date, residuals(gam_ndvi), pch = 19, cex = 0.5,
 # using chol, age, gender, and weight as predictors and... ----
 ?diabetes # see "Details" section
 range(diabetes$glyhb, na.rm = TRUE)
+head(diabetes)
 
 ## ... glyhb as the response ----
 m_diab_1 <- gam(glyhb ~ s(chol) + s(age) + gender + s(weight),
@@ -110,6 +112,8 @@ plot(m_diab_1,
      pages = 1,        # all plots in one page
      scheme = 1,       # use shaded CIs instead of dashed lines
      trans = exp)      # return to response scale, i.e. (0, Inf)
+summary(m_diab_1)
+View(gratia::derivatives(m_diab_1))
 
 ## ... a binary variable of diabetic or not as the response ----
 diabetes <- mutate(diabetes, diabetic = glyhb > 7)
@@ -125,8 +129,9 @@ m_diab_2 <- gam(diabetic ~ s(chol) + s(age) + gender + s(weight),
                 data = diabetes,
                 method = 'REML')
 
+plot(m_diab_2, all.terms = TRUE, pages = 1, scheme = 1)
 plot(m_diab_2, all.terms = TRUE, pages = 1, scheme = 1,
-     trans = m_diab_2$family$linkinv)
+     trans = inv_logit)
 
 # location-scale GAMs ----
 # estimated yearly temperature during the last millennium ----
@@ -147,14 +152,16 @@ m_temp <- gam(jasper ~ s(year, k = 30),
 plot(m_temp, scheme = 1, residuals = TRUE, cex = 2)
 
 # super wiggly!
-gam(jasper ~ s(year, k = 300),
+m_temp_300 <- gam(jasper ~ s(year, k = 300),
     family = gaussian(),
     data = globwarm,
-    method = 'REML') %>%
-  plot()
+    method = 'REML')
+plot.gam(m_temp_300, scheme = 1, n = 1e3)
 
 # variance isn't constant
 plot(globwarm$year, residuals(m_temp), pch = 19, cex = 0.5,
+     col = '#00000040') # black with some alpha
+plot(globwarm$year, residuals(m_temp_300), pch = 19, cex = 0.5,
      col = '#00000040') # black with some alpha
 
 # when variance isn't constant, use a location-scale model ----
