@@ -22,5 +22,6 @@ p
 
 p_anim <- p + transition_reveal(1:NFRAMES)
 
-p_anim # frames will be saved as individual images if `gifski` package is not installed
+p_anim #' frames will be saved as individual images if `gifski` package is not installed
 animate(p_anim, nframes = NFRAMES + 10, end_pause = 10)
+anim_save('~/GitHub/misc/animated-derivative.gif')
